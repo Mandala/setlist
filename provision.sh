@@ -7,8 +7,8 @@ echo "Installing nodejs..."
 apt-get install -q -y nodejs
 
 ## Prepare mocha for test
-echo "Installing mocha..."
-npm install -g -q mocha
+echo "Installing mocha and istanbul..."
+npm install -g -q mocha istanbul
 
 ## Prepare directory for test
 echo "Installing local dependencies..."
