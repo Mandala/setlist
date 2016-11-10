@@ -1,26 +1,20 @@
-#!/usr/bin/env bash
+#!/bin/bash
 
-## Configuration
-NODE_VER=4.4.7
-NODE_URL="https://nodejs.org/download/release/v$NODE_VER/node-v$NODE_VER-linux-x64.tar.gz"
-NODE_DIR="node-v$NODE_VER-linux-x64"
-DEST_DIR="/usr"
+## Get latest NodeJS Version
+echo "Adding node debian source to box..."
+curl -sL https://deb.nodesource.com/setup_4.x | sudo -E bash -
+echo "Installing nodejs..."
+apt-get install -q -y nodejs
 
-## Update and upgrade repos
-#apt-get update
-#apt-get upgrade -y
-
-## Download specific NodeJS version
-cd ~
-wget $NODE_URL -q -O nodepkg.tar.gz
-## Unzip tar file
-tar -xzf nodepkg.tar.gz
-## Copy binary files
-cd $NODE_DIR
-cp -r bin/ $DEST_DIR
-cp -r include/ $DEST_DIR
-cp -r lib/ $DEST_DIR
-cp -r share/ $DEST_DIR
-
-## Prepare for test
+## Prepare mocha for test
+echo "Installing mocha..."
 npm install -g -q mocha
+
+## Prepare directory for test
+echo "Installing local dependencies..."
+cd /vagrant
+npm install -q --only=dev 
+
+## Start test
+echo "Starting test suite..."
+npm test

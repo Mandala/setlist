@@ -4,236 +4,220 @@ SetlistJS
 [![Build Status](https://travis-ci.org/withmandala/setlist.svg?branch=master)](https://travis-ci.org/withmandala/setlist)
 
 Setlist will sequential-ish your asynchronous code with ES6 Generator Function
-and Promise. It is supposed to reduce the complexity of `Promise.then()` flow
-[as demonstrated below](#why-using-setlist) by using yield keyword and
-automagically return the promised value.
+and Promise - Say goodbye to indentation hell.
 
-Setlist is licensed under the MIT license. The current version of Setlist is
-v0.1.0.
+## TOC
 
-## Quick Jumplist
-
-- [Writing correct generator function](#generator-function)
-- [How to execute Setlist](#execute-setlist)
-- [Promisify callback function](#asynchronous-function-with-callback)
-- [Set timeout to Setlist](#timeouts)
+- [Setup](#setup)
+- [Getting Started](#getting-started)
+- [Setlist Chain](#setlist-chain)
+- [Setlist Timeout](#setlist-timeout)
+- [Testing](#testing)
+- [Bugs](#bugs)
+- [License](#license)
 
 ## Setup
 
 Install it with `npm`.
 
-    npm install --save setlist
+```
+npm install --save setlist
+```
 
-Then import it to your project with
+Then use them in your project by requiring `setlist`.
 
 ```javascript
-const Setlist = require('setlist');
+const List = require('setlist');
 ```
 
 Now, you are good to go!
 
-## Usage
+## Getting Started
 
-### Getting Started with Setlist
-
-> **RULE OF THUMB** - To minimize headache when using the Setlist, make sure
-> that there is always a `yield` keyword before calling **asynchronous
-> function** and **generator function**.
->
-> You **should not** use `yield` when working with blocking or synchronous
-> function.
-
-#### Generator Function
-
-First, wrap up your asynchronous function with a generator function, that is
-`function* ()`. Please note that the asynchronous function should return a
-promise. If not, please refer to promisify callback function section below.
-
-**What the hell is promise anyway?** Please take a look at the
+This topics requires you to understand the basics of **Promise**
 <https://www.promisejs.org>
 
+> **RULE OF THUMB**  
+> There is always a `yield` keyword before calling
+> **asynchronous function** and **generator function**.  
+> **Do not** use `yield` when working with synchronous function.
+
+This is an example of function using Promises to handle some asynchronous
+operation.
+
 ```javascript
-function* MySetlist(name) {
+// Suppose that getDataFromDb is returning promises
+getDataFromDb('myTable', name)
 
-    // First, we want to fetch person model from db (async)
-    let person = yield Person.findByName(name);
+    .then(function(data) {
+        // We got the data, but the next function is callback only
+        // so we have to wrap it up with promises
+        return new Promise(function(resolve) {
+            getPeopleWithCallback(data, resolve);
+        });
+    })
 
-    // Then, find the job of the person (async)
-    let job = yield person.findJob();
+    .then(function(people) {
+        // We now get the people, now let's decide
+        if ('good' in people) {
+            return 'yeay';
+        }
+        // Lets clean up things first
+        else {
+            // Suppose that this function is returning promises
+            return cleanUpPeople(people).then(function() {
+                return 'yeay after clean';
+            });
+        }
+    });
+```
 
-    // Then modify some code (synchronous function)
-    modifyJobInformation(job, 'okay');
+Meh. Let's write that again in Setlist.
 
-    // Store back the data (asynchronous)
-    if (yield job.save()) {
-        
-        // Successfuly safe the job
-        return true;
+```javascript
+function* yeayFunction(name) {
+    // Get the data from Db (promise function)
+    let data = yield getDataFromDb('myTable', name);
 
+    // Get people with callback function
+    // Setlist only accepts Promises, so we should promisify it with
+    // List.async() function
+    let people = yield List.async(getPeopleWithCallback)(data);
+
+    // Lets decide
+    if ('good' in people) {
+        // Yeay it's good
+        return 'yeay';
+    }
+    // You should cleaned up first
+    else {
+        yield cleanUpPeople(people);
+        // Now it is okay to return
+        return 'yeay after clean';
+    }
+}
+```
+
+Then, run the `yeayFunction()` with the `List()` function.
+
+```javascript
+List(yeayFunction('Joe'));
+```
+
+Done. No more indentation hell, and of course, no callback hells.
+
+## Setlist Chain
+
+You can chain multiple generator function execution with `List(...).next()`.
+
+```javascript
+// Chain multiple execution with .next()
+List(yeayFunction('Joe'))
+    .next(anotherFunction())
+    .next(lastFunction());
+```
+
+Or, if you prefer creating new generator function, you can also call them with
+yield keyword. The yield keyword also pass the return value of child generator
+function to the parent.
+
+```javascript
+// Or collect them in new generator function
+function* taskList() {
+    let status = yield yeayFunction('Joe');
+    yield processFunction(status);
+    yield lastFunction();
+}
+// Just execute the parent generator function
+List(taskList());
+```
+
+## Working with Callback Functions
+
+In the past, asynchronous function usually equipped with callback as their last
+argument. So, the execution result of async function will be passed directly
+to the callback function as argument. Thus, any errors occured when the async
+function should be handled manually.
+
+```javascript
+function callbackHandler(err, value, handle) {
+    // Check for execution error
+    if (err) {
+        ...
     } else {
+        callNextFunction(...);
+    }
+}
 
-        // Uh oh, error. Log first to the database (async)
-        yield Log.write(job, 'writeError');
-        // Tell user we cannot save the job
-        return false;
+startProcess(callbackHandler);
+```
 
+Promisify the callback function also not helping the situation. This is mainly
+caused by the promisifier only pass the `resolve()` function as the callback.
+As a result, error callbacks will treated as `resolved`, not `rejected`.
+Moreover, the second and third result argument will lost because resolve
+function only accepts single argument.
+
+With Setlist, you can directly `throw` error from the generator function and
+Setlist will indicate the parent promise as rejected. And yes, the return
+of calling `List()` is Promise object so you can chain them with `.catch()`
+to catch errors.
+
+The `List.async()` also automatically packs the arguments from callback with
+array if the argument count is 2 or more.
+
+```javascript
+function* taskList() {
+    // Run callback function
+    let status = yield List.async(startProcess)();
+
+    // Now the status var holds array containing 3 items
+    // and arranged as [err, value, handle]
+    if (status[0]) { // Err argument
+        // Directly throw error, the execution of taskList() will not continue
+        throw status[0];
     }
 
-}
-```
-
-#### Execute Setlist
-
-Finally, run your generator function by calling `Setlist()` right away! You can
-chain them with ordinary promise function or with another generator function by
-calling `.next()` function.
-
-```javascript
-// You can continue it with Promise based async
-Setlist(MySetlist('Joe'))
-    .then(...)
-    .then(...)
-    .catch(...);
-
-// Or chain some generator function like a boss
-Setlist(MySetlist('Joe'))
-    .next(AnotherSetlist())
-    .next(LastSetlist());
-```
-
-If you need the return value from calling another generator function, you can
-just wrap them in a parent generator function.
-
-```javascript
-function* SubSetlistOne() {
-    ...
+    // Continue to the next step
+    yield callNextFunction(...);
 }
 
-function* SubSetlistTwo(param) {
-    ...
-}
-
-function* ParentSetlist() {
-
-    let result = yield SubSetlistTwo(yield SubSetlistOne());
-
-    // Or, you can also do this
-
-    let resultOne = yield SubSetlistOne();
-    let resultTwo = yield SubSetlistTwo(resultOne);
-
-}
-```
-
-Or, you can run multiple setlist in parallel by doing
-
-```javascript
-// This function will run concurrently
-Setlist(ParallelSetlistOne());
-Setlist(ParallelSetlistTwo());
-```
-
-### Why using Setlist?
-
-Let's wrote the `MySetlist()` function entirely by just using Promise function.
-
-```javascript
-function MySetlist(name) {
-
-    Person.findByName(name).then(function(person) {
-    
-        return person.findJob()
-
-    }).then(function(job) {
-
-        modifyJobInformation(job, 'okay');
-        return job.save()
-
-    }).then(function(saved) {
-
-        if (saved) {
-            return true;
-        } else {
-            return Log.write(job, 'writeError').then(function() {
-                return false;
-            })
-        }
-
+List(taskList())
+    .catch(function(err) {
+        // Handle error here
+        ...
     });
-
-}
 ```
 
-Can you read the code? Good.
-
-### Asynchronous Function with Callback
-
-If your async function use callbacks, you can wrap it with `Setlist.async()`
-function (assuming that the callback function is the last parameter).
+Or, you can also pass the callback function directly to the yield with `bind()`
+if the function require arguments beside the callback.
 
 ```javascript
-function CallbackFunction(param, callback) {
-    // Function prototype
-}
-
-function* SetlistFunction(param) {
-    let result = yield Setlist.async(CallbackFunction)(param);
-}
+// This is also okay
+let status = yield startProcess.bind(null, ...);
 ```
 
-Or, you can just pass it to the yield keyword and bind them with required
-parameter besides the callback.
-
-```javascript
-function* SetlistFunction(param) {
-    let result = yield CallbackFunction.bind(null, param);
-}
-```
-
-Alternatively, if somehow your async code does not put the callback on the last
-parameter, you can wrap it manually using promise.
-
-```javascript
-function PromisedFunction(param) {
-
-    return new Promise(function(resolve, reject) {
-
-        try {
-            CallbackFunction(resolve, param);
-        } catch (err) {
-            reject(err);
-        }
-
-    });
-
-}
-```
-
-### Synchronous Function
-
-You **should not** use `yield` keyword on synchronous function (e.g.
-`yield LongFunction()`) or plain objects (e.g. `yield (1 + 2)`). It will add the
-function call stack and benefits **nothing** at all.
-
-### Timeouts
+## Setlist Timeout
 
 It is possible to attach timeout to the Setlist, limiting the execution time
 and return promise rejetion on timeout. To activate timeout, pass the time of
-timeout (in ms) as the second argument of `Task(..., [timeout])`
+timeout (in ms) as the second argument of `List(..., [timeout])`
 
 ```javascript
 // Setlist with time limit of 2s
-Setlist(AsyncTask(), 2000);
+List(mySetlist(), 2000);
 
 // Setlist without time limit
-Setlist(OtherAsyncTask());
+List(myOtherSetlist());
 ```
 
 ## Testing
 
 You can test the package by
 
-    npm test
+```
+npm test
+```
 
 It may not the best testing in the world as this is my first project that using
 a real proper test.
@@ -242,3 +226,7 @@ a real proper test.
 
 If you encounter any issues related to the Setlist library, please report them
 at <https://github.com/withmandala/setlist/issues>
+
+## License
+
+SetlistJS is MIT licensed.

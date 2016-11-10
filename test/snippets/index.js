@@ -51,6 +51,10 @@ s.callback = function(v, cb) {
     s.async(cb.bind(null, v));
 }
 
+s.callbackMulti = function(a, b, c, d, cb) {
+    s.async(cb.bind(null, a, b, c, d));
+}
+
 // Define promise function
 s.promise = function(v) {
     return new Promise((r)=>s.async(r.bind(null, v)));
