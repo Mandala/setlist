@@ -1,6 +1,8 @@
 SetlistJS
 ==========
 
+[![Build Status](https://travis-ci.org/withmandala/setlist.svg?branch=master)](https://travis-ci.org/withmandala/setlist)
+
 Setlist will sequential-ish your asynchronous code with ES6 Generator Function
 and Promise. It is supposed to reduce the complexity of `Promise.then()` flow
 [as demonstrated below](#why-using-setlist) by using yield keyword and
