@@ -31,7 +31,10 @@
   },
   "homepage": "https://github.com/adzil/withmandala#readme",
   "devDependencies": {
+    "coveralls": "^2.11.14",
+    "istanbul": "^0.4.5",
     "mocha": "^3.1.2",
+    "mocha-lcov-reporter": "^1.2.0",
     "should": "^11.1.1"
   }
 }

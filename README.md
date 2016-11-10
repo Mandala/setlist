@@ -2,6 +2,8 @@ SetlistJS
 ==========
 
 [![Build Status](https://travis-ci.org/withmandala/setlist.svg?branch=master)](https://travis-ci.org/withmandala/setlist)
+[![Coverage Status](https://coveralls.io/repos/github/withmandala/setlist/badge.svg?branch=master)](https://coveralls.io/github/withmandala/setlist?branch=master)
+[![Known Vulnerabilities](https://snyk.io/test/github/withmandala/setlist/badge.svg)](https://snyk.io/test/github/withmandala/setlist)
 
 Setlist will sequential-ish your asynchronous code with ES6 Generator Function
 and Promise - Say goodbye to indentation hell.
