@@ -2,7 +2,6 @@
  * SetlistJS - Test Suite
  * Functionality test for Setlist
  * @author Fadhli Dzil Ikram
- * @version 0.1.0
  */
 
 'use strict';

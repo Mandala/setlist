@@ -2,7 +2,6 @@
  * SetlistJS - Test Snippets
  * Define some useful snippets for testing setlist functionality
  * @author Fadhli Dzil Ikram
- * @version 0.1.0
  */
 
 'use strict';

@@ -1,6 +1,6 @@
 {
   "name": "setlist",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Sequential-ish your asynchronous code with ES6 Generator Function and Promise",
   "main": "index.js",
   "scripts": {
