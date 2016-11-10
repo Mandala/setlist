@@ -1,0 +1,37 @@
+{
+  "name": "setlist",
+  "version": "0.1.0",
+  "description": "Sequential-ish your asynchronous code with ES6 Generator Function and Promise",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/withmandala/setlist.git"
+  },
+  "keywords": [
+    "yield",
+    "promise",
+    "callback",
+    "setlist",
+    "taskrunner",
+    "generator",
+    "function",
+    "asynchronous",
+    "async",
+    "es6",
+    "es2015",
+    "sequential"
+  ],
+  "author": "Fadhli Dzil Ikram",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/withmandala/setlist/issues"
+  },
+  "homepage": "https://github.com/adzil/withmandala#readme",
+  "devDependencies": {
+    "mocha": "^3.1.2",
+    "should": "^11.1.1"
+  }
+}
