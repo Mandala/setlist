@@ -23,6 +23,9 @@ describe('Method probes', function() {
     it('$.async() should be a function and take 1 argument', function() {
         $.async.should.be.a.Function().with.lengthOf(1);
     });
+    it('$.convert() should be a function and take 1 argument', function() {
+        $.convert.should.be.a.Function().with.lengthOf(1);
+    });
     it('$.worker() should be a function and take 4 arguments', function() {
         $.worker.should.be.a.Function().with.lengthOf(4);
     });
@@ -128,5 +131,29 @@ describe('Setlist $ test', function() {
     });
     it('Should correctly return value after .next()', function() {
         return $(s.gf()).next(s.gf(true)).should.fulfilledWith(true);
+    });
+});
+describe('Setlist $.convert() test', function() {
+    let target = undefined;
+
+    before(function() {
+        // Start convertion process
+        target = $.convert(s.objSrc);
+    });
+
+    it('Target should only have 1 own property', function() {
+        Object.getOwnPropertyNames(target).should.have.lengthOf(1);
+    });
+    it('Target should have same version of fn()', function() {
+        target.fn.should.equal(s.objSrc.fn);
+    });
+    it('Target gf() should be a function', function() {
+        target.gf.should.be.a.Function();
+    });
+    it('Target gf() should return a promise', function() {
+        $.identify(target.gf()).should.equal('Promise');
+    });
+    it('Target gf() should eventually return value', function() {
+        return target.gf(true).should.eventually.equal(true);
     });
 });
