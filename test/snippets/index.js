@@ -31,7 +31,7 @@ s.async = function(cb, x) {
     if (x !== undefined) {
         setTimeout(x, cb);
     } else {
-        setTimeout(cb);
+        process.nextTick(cb);
     }
 }
 
@@ -117,4 +117,9 @@ s.gfErrPromise = function*() {
 
 s.gfLong = function*() {
     return yield s.async.bind(s, 1000);
+}
+
+s.objSrc = {
+    gf: function*(v) { return yield s.promise(v) },
+    fn: function(v) { return v }
 }
