@@ -1,6 +1,6 @@
 {
   "name": "setlist",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "Sequential-ish your asynchronous code with ES6 Generator Function and Promise",
   "main": "index.js",
   "scripts": {
@@ -31,10 +31,17 @@
   },
   "homepage": "https://github.com/adzil/withmandala#readme",
   "devDependencies": {
+    "@types/lodash": "^4.14.39",
+    "@types/mocha": "^2.2.33",
+    "@types/node": "^6.0.48",
+    "@types/should": "^8.1.30",
     "coveralls": "^2.11.14",
     "istanbul": "^0.4.5",
     "mocha": "^3.1.2",
     "mocha-lcov-reporter": "^1.2.0",
     "should": "^11.1.1"
+  },
+  "dependencies": {
+    "lodash": "^4.17.2"
   }
 }
