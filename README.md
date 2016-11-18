@@ -13,7 +13,9 @@ and Promise - Say goodbye to indentation hell.
 - [Setup](#setup)
 - [Getting Started](#getting-started)
 - [Setlist Chain](#setlist-chain)
-- [Setlist Timeout](#setlist-timeout)
+- [Wrapping Callback Function](#wrapping-callback-functions-with-promise)
+- [Transform Generator Function Class with Promise](#wrapping-class-or-object-with-promise)
+- [Create Callback Handler with Generator Function](#create-callback-handler-using-generator-function)
 - [Testing](#testing)
 - [Bugs](#bugs)
 - [License](#license)
@@ -29,20 +31,13 @@ npm install --save setlist
 Then use them in your project by requiring `setlist`.
 
 ```javascript
-const List = require('setlist');
+const run = require('setlist');
 ```
-
-Now, you are good to go!
 
 ## Getting Started
 
 This topics requires you to understand the basics of **Promise**
 <https://www.promisejs.org>
-
-> **RULE OF THUMB**  
-> There is always a `yield` keyword before calling
-> **asynchronous function** and **generator function**.  
-> **Do not** use `yield` when working with synchronous function.
 
 This is an example of function using Promises to handle some asynchronous
 operation.
@@ -100,21 +95,26 @@ function* yeayFunction(name) {
 }
 ```
 
-Then, run the `yeayFunction()` with the `List()` function.
+> **RULE OF THUMB**  
+> There is always a `yield` keyword before calling
+> **asynchronous function** and **generator function**.  
+> **Do not** use `yield` when working with synchronous function.
+
+Then, run the `yeayFunction()` with the `run()` function.
 
 ```javascript
-List(yeayFunction('Joe'));
+run(yeayFunction('Joe'));
 ```
 
 Done. No more indentation hell, and of course, no callback hells.
 
 ## Setlist Chain
 
-You can chain multiple generator function execution with `List(...).next()`.
+You can chain multiple generator function execution with `run(...).next()`.
 
 ```javascript
 // Chain multiple execution with .next()
-List(yeayFunction('Joe'))
+run(yeayFunction('Joe'))
     .next(anotherFunction())
     .next(lastFunction());
 ```
@@ -130,87 +130,118 @@ function* taskList() {
     yield processFunction(status);
     yield lastFunction();
 }
-// Just execute the parent generator function
-List(taskList());
+// Execute the parent generator function
+run(taskList());
 ```
 
-## Working with Callback Functions
+## Wrapping Callback Functions with Promise
 
-In the past, asynchronous function usually equipped with callback as their last
-argument. So, the execution result of async function will be passed directly
-to the callback function as argument. Thus, any errors occured when the async
-function should be handled manually.
+Setlist does not work with callback functions. So, in order to use your
+callback functions from the past, you can wrap them with `run.promisify()`.
 
-```javascript
-function callbackHandler(err, value, handle) {
-    // Check for execution error
-    if (err) {
-        ...
-    } else {
-        callNextFunction(...);
-    }
-}
-
-startProcess(callbackHandler);
-```
-
-Promisify the callback function also not helping the situation. This is mainly
-caused by the promisifier only pass the `resolve()` function as the callback.
-As a result, error callbacks will treated as `resolved`, not `rejected`.
-Moreover, the second and third result argument will lost because resolve
-function only accepts single argument.
-
-With Setlist, you can directly `throw` error from the generator function and
-Setlist will indicate the parent promise as rejected. And yes, the return
-of calling `List()` is Promise object so you can chain them with `.catch()`
-to catch errors.
-
-The `List.async()` also automatically packs the arguments from callback with
-array if the argument count is 2 or more.
+For example, the `setlist` promisify will wrap the file system `fs.readFile()`
+function so it can be chained in our generator function.
 
 ```javascript
-function* taskList() {
-    // Run callback function
-    let status = yield List.async(startProcess)();
+// Import fs library
+const fs = require('fs');
 
-    // Now the status var holds array containing 3 items
-    // and arranged as [err, value, handle]
-    if (status[0]) { // Err argument
-        // Directly throw error, the execution of taskList() will not continue
-        throw status[0];
-    }
+// Create generator function
+function* readConfig(filename) {
+    // Get file content
+    let content = yield run.promisify(fs.readFile)(filename);
 
-    // Continue to the next step
-    yield callNextFunction(...);
+    // Do something with it
+    return processFileContent(content);
 }
 
-List(taskList())
-    .catch(function(err) {
-        // Handle error here
-        ...
+// Or do with promise style
+run.promisify(fs.readFile)(filename)
+    .then(function(content) {
+        return processFileContent(content);
     });
 ```
 
-Or, you can also pass the callback function directly to the yield with `bind()`
-if the function require arguments beside the callback.
+## Wrapping Class or Object with Promise
+
+If you are planning to write down classes or objects with generator function,
+you can transform them into Promise on runtime by calling `run.proxify()`
+and pass in your class or object after the class definition.
+
+For class object,it will also automatically transform the prototype object.
+Note that you should convert extended class with the `proxify` if you define
+new generator function in the extended class.
 
 ```javascript
-// This is also okay
-let status = yield startProcess.bind(null, ...);
+class baseClass {
+    * method() {
+        ...
+    }
+
+    static * staticMethod() {
+        ...
+    }
+}
+
+// Convert base class
+run.proxify(baseClass);
+
+class extendedClass extends baseClass {
+    * extMethod() {
+        ...
+    }
+}
+
+// Convert extended class
+run.proxify(extendedClass);
+
+// No need to convert because there is no generator functions
+class anotherClass extends baseClass {
+    syncMethod() {
+        ...
+    }
+}
+
+// But this calls will return promise because we already
+// transform the base class
+anotherClass.staticMethod();
 ```
 
-## Setlist Timeout
+## Create Callback Handler using Generator Function
 
-It is possible to attach timeout to the Setlist, limiting the execution time
-and return promise rejetion on timeout. To activate timeout, pass the time of
-timeout (in ms) as the second argument of `List(..., [timeout])`
+Some function that require callback handler, such as REPL eval function,
+are more reliably written with generator function, at least in my opinion.
+
+To wrap the generator function so it can be used with the callback handler
+you can use `run.callbackify()` function.
 
 ```javascript
-// Setlist with time limit of 2s
-List(mySetlist(), 2000);
+// Import REPL library
+const repl = require('repl');
 
-// Setlist without time limit
-List(myOtherSetlist());
+// Create repl eval callback handler
+function* evalHandle(cmd) {
+    // Get result from evaluated code
+    let result;
+    try {
+        let result = eval(cmd);
+    } catch(error) {
+        // Get recoverable status (See REPL documentation from Node.js)
+        if (isRecoverable(error)) {
+            return REPL.Recoverable(error);
+        } else {
+            // You can just throw error here and the callbackify will properly
+            // pass the error to the callback
+            throw error;
+        }
+    }
+
+    // Return result to the callback if the eval suceeds
+    return result;
+}
+
+// Start repl session
+repl.start({ eval: run.callbackify(evalHandle) });
 ```
 
 ## Testing
@@ -231,4 +262,4 @@ at <https://github.com/withmandala/setlist/issues>
 
 ## License
 
-SetlistJS is MIT licensed.
+Copyright (c) 2016 Fadhli Dzil Ikram. SetlistJS is MIT licensed.
