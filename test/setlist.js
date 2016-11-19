@@ -4,6 +4,8 @@
  * @author Fadhli Dzil Ikram
  */
 
+'use strict';
+
 const $ = require('../lib/setlist');
 const should = require('should');
 
