@@ -4,4 +4,4 @@
  * Copyright (c) 2016 Fadhli Dzil Ikram
  */
 
-module.exports = require('./lib/setlist');
+module.exports = require('./lib/setlist')
