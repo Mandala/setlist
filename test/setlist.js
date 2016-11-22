@@ -65,26 +65,14 @@ describe('Generator runner sanity checking test', function () {
 
 describe('Generator runner functional test', function () {
   it('Non-async return', function () {
-    let gf = function* (v) { return v }
-    return $(gf(true)).should.fulfilledWith(true)
-  })
-  it('Non-async yield return', function () {
     let gf = function* (v) { return yield v }
     return $(gf(true)).should.fulfilledWith(true)
   })
   it('Promise return', function () {
-    let gf = function* (v) { return Promise.resolve(v) }
-    return $(gf(true)).should.fulfilledWith(true)
-  })
-  it('Promise yield return', function () {
     let gf = function* (v) { return yield Promise.resolve(v) }
     return $(gf(true)).should.fulfilledWith(true)
   })
   it('Generator function return', function () {
-    let gf = function* (v) { return function* (v) { return v }(v) }
-    return $(gf(true)).should.fulfilledWith(true)
-  })
-  it('Generator function yield return', function () {
     let gf = function* (v) { return yield function* (v) { return v }(v) }
     return $(gf(true)).should.fulfilledWith(true)
   })
