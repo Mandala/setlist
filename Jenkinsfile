@@ -3,6 +3,7 @@ node {
   env.PATH = "${nodeHome}/bin:${env.PATH}"
 
   stage('Environment check') {
+    sh 'echo $PATH'
     sh 'node -v'
     sh 'npm -v'
   }
