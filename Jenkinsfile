@@ -3,8 +3,7 @@ node {
   env.PATH = "${nodeHome}/bin:${env.PATH}"
 
   stage('Environment check') {
-    sh 'echo $PATH'
-    sh 'ls /var/jenkins_home/tools/jenkins.plugins.nodejs.tools.NodeJSInstallation/node-6/bin'
+    sh 'export PATH=$PATH'
     sh 'node -v'
     sh 'npm -v'
   }
