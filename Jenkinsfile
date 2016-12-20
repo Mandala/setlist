@@ -4,6 +4,7 @@ node {
 
   stage('Environment check') {
     sh 'echo $PATH'
+    sh 'ls /var/jenkins_home/tools/jenkins.plugins.nodejs.tools.NodeJSInstallation/node-6/bin'
     sh 'node -v'
     sh 'npm -v'
   }
